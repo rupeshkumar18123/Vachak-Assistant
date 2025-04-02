@@ -26,7 +26,10 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
     private TexttoSpeech texttoSpeech;
     private AppLaunch appLaunch;
     private static final int req_record_audio=1;
+    private static final int req_camera=100;
     private LottieAnimationView micbtn;
+    private FlashLight flashLight;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +39,12 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
                 PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.RECORD_AUDIO},req_record_audio);
+        }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)!=
+                PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},req_camera);
         }
 
         VideoView videoView = findViewById(R.id.videoView);
@@ -51,18 +60,17 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
 
         texttoSpeech = new TexttoSpeech(this);
         appLaunch= new AppLaunch(this,texttoSpeech);
+        speechListener = new SpeechListener(this,this);
+        flashLight =new FlashLight(this,texttoSpeech);
 
         texttoSpeech.speak("Hello! What can i help you with?");
-        speechListener = new SpeechListener(this,this);
 
         micbtn.setOnClickListener(v -> {
 
             if(!micbtn.isAnimating()){
                 micbtn.playAnimation();
             }
-
             speechListener.startListening();
-
         });
 
     }
@@ -72,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         String textLower = text.toLowerCase();
         String appName = "";
 
+        // for opening the apps
         if (textLower.contains("open ")) {
             appName = text.substring(textLower.indexOf("open ") + 5);
         } else if (textLower.contains("launch ")) {
@@ -82,14 +91,19 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
 
         if (!appName.isEmpty()) {
             appLaunch.openApp(appName);
-        } else {
-            texttoSpeech.speak("Sorry, I didn't understand.");
+            return;
         }
-//        if(text.toLowerCase().startsWith("open ")){
-//            String appName = text.substring(5);
-//            appLaunch.openApp(appName);
-//        }
 
+        // for flashlight
+        if(textLower.contains("turn on flashlight")|| textLower.contains("enable flashlight")){
+            flashLight.turnonflash();
+            return;
+        } else if (textLower.contains("turn off flashlight") || textLower.contains("disable flashlight")) {
+            flashLight.turnoffflash();
+            return;
+        }
+
+        texttoSpeech.speak("Sorry I didn't understand.");
     }
 
     @Override
