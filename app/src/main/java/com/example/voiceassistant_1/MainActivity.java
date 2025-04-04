@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.speech.RecognizerIntent;
 import android.widget.ImageButton;
 import android.widget.VideoView;
@@ -47,6 +48,11 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
                     new String[]{Manifest.permission.CAMERA},req_camera);
         }
 
+        if(!isNotiaccessenable()){
+            reqnotiaccess();
+        }
+
+
         VideoView videoView = findViewById(R.id.videoView);
         micbtn = findViewById(R.id.micButton);
 
@@ -75,6 +81,17 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
 
     }
 
+    private boolean isNotiaccessenable(){
+        String enablelisteners = Settings.Secure.getString(getContentResolver(),
+                "enabled_notification_listeners");
+        return enablelisteners !=null && enablelisteners.contains(getPackageName());
+    }
+
+    private void reqnotiaccess(){
+        Intent intent=new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+        startActivity(intent);
+    }
+
     @Override
     public void onSpeechRecognized(String text) {
         String textLower = text.toLowerCase();
@@ -95,11 +112,19 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         }
 
         // for flashlight
-        if(textLower.contains("turn on flashlight")|| textLower.contains("enable flashlight")){
+        if(textLower.contains("turn on flashlight")|| textLower.contains("enable flashlight")
+                || textLower.contains("on flash") || textLower.contains("flashlight on")){
             flashLight.turnonflash();
             return;
-        } else if (textLower.contains("turn off flashlight") || textLower.contains("disable flashlight")) {
+        } else if (textLower.contains("turn off flashlight") || textLower.contains("disable flashlight")
+                || textLower.contains("off flash") || textLower.contains("flashlight off")) {
             flashLight.turnoffflash();
+            return;
+        }
+
+        // for reading notification
+        if (textLower.contains("read notifications") || textLower.contains("notification read")){
+            NotificationRead.readnoti();
             return;
         }
 

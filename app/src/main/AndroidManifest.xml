@@ -1,25 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Declare the apps you want to query -->
     <queries>
-        <!-- Example: Allow querying specific apps -->
         <package android:name="com.whatsapp"/>
         <package android:name="com.instagram.android"/>
         <package android:name="com.google.android.youtube"/>
-
-        <!-- Allow querying all installed apps (not recommended) -->
         <intent>
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>
         </intent>
     </queries>
 
-    <!-- Other permissions -->
+    <!-- Required Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+        tools:ignore="ProtectedPermissions" />
 
+
+    <!-- Features -->
     <uses-feature android:name="android.hardware.camera.flash" android:required="false"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
@@ -34,6 +37,7 @@
         android:theme="@style/Theme.VoiceAssistant_1"
         tools:targetApi="31">
 
+        <!-- Main Activity -->
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -41,5 +45,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Declare the Notification Listener Service -->
+
+        <service
+            android:name=".NotificationRead"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService"/>
+            </intent-filter>
+        </service>
+
     </application>
+
 </manifest>
