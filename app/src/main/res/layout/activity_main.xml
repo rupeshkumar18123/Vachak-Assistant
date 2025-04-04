@@ -77,15 +77,16 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/responseText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        android:text=" "
+        android:text=""
         android:textColor="@android:color/white"
         android:textSize="24sp"
         android:textStyle="bold"
+        android:textAlignment="center"
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="@+id/videoView"
         app:layout_constraintHorizontal_bias="0.0"
