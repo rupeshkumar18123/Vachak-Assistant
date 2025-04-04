@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.RecognizerIntent;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.VideoView;
 
 import androidx.activity.EdgeToEdge;
@@ -30,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
     private static final int req_camera=100;
     private LottieAnimationView micbtn;
     private FlashLight flashLight;
+    private TextView textView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
 
         VideoView videoView = findViewById(R.id.videoView);
         micbtn = findViewById(R.id.micButton);
+        textView2=findViewById(R.id.textView2);
 
         Uri videouri=Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.sample);
         videoView.setVideoURI(videouri);
@@ -97,6 +100,8 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         String textLower = text.toLowerCase();
         String appName = "";
 
+        textView2.setText(text);
+
         // for opening the apps
         if (textLower.contains("open ")) {
             appName = text.substring(textLower.indexOf("open ") + 5);
@@ -107,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         }
 
         if (!appName.isEmpty()) {
+            textView2.setText("Open " +appName);
             appLaunch.openApp(appName);
             return;
         }
@@ -114,21 +120,37 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         // for flashlight
         if(textLower.contains("turn on flashlight")|| textLower.contains("enable flashlight")
                 || textLower.contains("on flash") || textLower.contains("flashlight on")){
+            texttoSpeech.speak("Turning on flashlight");
+            textView2.setText("Turning on flashlight");
             flashLight.turnonflash();
             return;
         } else if (textLower.contains("turn off flashlight") || textLower.contains("disable flashlight")
                 || textLower.contains("off flash") || textLower.contains("flashlight off")) {
+            texttoSpeech.speak("Turning off flashlight");
+            textView2.setText("Turning off flashlight");
             flashLight.turnoffflash();
             return;
         }
 
         // for reading notification
         if (textLower.contains("read notifications") || textLower.contains("notification read")){
+            texttoSpeech.speak("Reading notifications...");
+            textView2.setText("Reading notifications...");
             NotificationRead.readnoti();
-            return;
+//            Intent intent=new Intent(this, NotificationRead.class);
+//            startService(intent);
+                return;
+        }
+
+        // for closing the app
+        if(textLower.contains("exit the app") || textLower.contains("close")
+                || textLower.contains("close the app") || textLower.contains("exit")){
+            texttoSpeech.speak("Closing the app");
+                 finishAffinity();
         }
 
         texttoSpeech.speak("Sorry I didn't understand.");
+        textView2.setText("Sorry, I didn't understand.");
     }
 
     @Override
