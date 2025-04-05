@@ -39,7 +39,7 @@ public class WeatherHelper {
                             response.body().main.temp + "°C";
                     callback.onWeatherResponse(weatherInfo);
                 } else {
-                    callback.onFailure("Failed to fetch weather data.");
+                    callback.onFailure("Fail to fetch weather data.");
                 }
             }
 

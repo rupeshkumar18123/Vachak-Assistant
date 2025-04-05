@@ -70,4 +70,4 @@ public class CallHelper {
         if (cursor != null) cursor.close();
         return null; // No contact found
     }
-}
+}//just a change

@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             if (time != null) {
                 setAlarm(time);
             } else {
-                respond("I couldn't understand the time.");
+                respond("I couldn't understand the time. please say it again");
             }
         } else if (query.toLowerCase().contains("open ") || query.contains("launch ") || query.contains("start ")) {
             String appName = extractAppName(query);

@@ -18,4 +18,4 @@ public class WeatherResponse {
         @SerializedName("temp")
         public float temp;
     }
-}
+}//just checking a change
