@@ -19,19 +19,22 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.498"/>
 
-    <com.airbnb.lottie.LottieAnimationView
+    <TextView
         android:id="@+id/logoAnimation"
         android:layout_width="100dp"
         android:layout_height="100dp"
+        android:text="Vachak"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.078"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/logo" />
+
+        app:layout_constraintVertical_bias="0.078" />
 
     <TextView
         android:id="@+id/textView1"

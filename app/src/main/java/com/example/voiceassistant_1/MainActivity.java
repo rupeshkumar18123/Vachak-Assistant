@@ -24,6 +24,9 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import android.widget.TextView;
+import android.provider.Settings;
+
 
 public class MainActivity extends AppCompatActivity implements OnSpeechRecognizedListener, WeatherHelper.WeatherCallback {
 
@@ -31,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
     private static final int CONTACTS_PERMISSION_REQUEST_CODE = 102;
 
     private LottieAnimationView micButton;
+    private FlashLight flashLight; // ✅ ADDED
+
     private VideoView videoView;
     private TextView responseText;
 
@@ -39,15 +44,22 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
     private AppLaunch appLaunch;
     private CallHelper callHelper;
     private WeatherHelper weatherHelper;
+    private NLPIntentMatcher nlpIntentMatcher;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        nlpIntentMatcher = new NLPIntentMatcher(IntentWordList.intentWords);
         videoView = findViewById(R.id.videoView);
         micButton = findViewById(R.id.micButton);
         responseText = findViewById(R.id.responseText);
+//        NLPIntentMatcher nlpMatcher = new NLPIntentMatcher();
+//        nlpIntentMatcher = new NLPIntentMatcher();
+//        nlpIntentMatcher = new NLPIntentMatcher(IntentWordList.intentWords);
+
+
 
         // Background video
         Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.sample);
@@ -57,14 +69,23 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             videoView.start();
         });
 
+        if(!isNotiaccessenable()){
+            reqnotiaccess();
+        }
+
         // Request necessary permissions
         requestPermissions();
 
         // Initialize helpers
         texttoSpeech = new TexttoSpeech(this);
+        NotificationRead.init(texttoSpeech);
+
         appLaunch = new AppLaunch(this, texttoSpeech);
         callHelper = new CallHelper(this);
         weatherHelper = new WeatherHelper(this);
+//        flashLight = new FlashLight(this)
+        flashLight = new FlashLight(this, texttoSpeech); // ✅ Correct
+
 
         // Welcome message
         texttoSpeech.speak("Hello! What can I help you with?");
@@ -80,66 +101,179 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         });
     }
 
+
+    private boolean isNotiaccessenable(){
+        String enablelisteners = Settings.Secure.getString(getContentResolver(),
+                "enabled_notification_listeners");
+        return enablelisteners !=null && enablelisteners.contains(getPackageName());
+    }
+
+    private void reqnotiaccess(){
+        Intent intent=new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+        startActivity(intent);
+    }
+
+
     @Override
     public void onSpeechRecognized(String query) {
-//        query = ;
+        String textLower = query.toLowerCase(); // ✅ ADDED for simpler checks
 
-        if (query.toLowerCase().contains("call")) {
+        if (textLower.contains("call")) {
             String contactName = extractContactName(query);
             if (contactName != null) {
                 callHelper.makePhoneCall(contactName);
             } else {
                 respond("I couldn't identify the contact name.");
             }
-        } else if (query.toLowerCase().contains("weather")) {
+        } else if (textLower.contains("weather")) {
             String city = extractCityFromQuery(query);
             weatherHelper.fetchWeather(city);
-        } else if (query.toLowerCase().contains("set alarm")) {
+        } else if (textLower.contains("set alarm")) {
             String time = extractTimeFromQuery(query);
-            Log.d("AlarmDebug", "Extracted time: " + time); // ✅ Debug extracted time
+            Log.d("AlarmDebug", "Extracted time: " + time);
             if (time != null) {
                 setAlarm(time);
             } else {
                 respond("I couldn't understand the time. please say it again");
             }
-        } else if (query.toLowerCase().contains("open ") || query.contains("launch ") || query.contains("start ")) {
+        } else if (textLower.contains("open ") || textLower.contains("launch ") || textLower.contains("start ")) {
             String appName = extractAppName(query);
             if (!appName.isEmpty()) {
                 appLaunch.openApp(appName);
             } else {
                 respond("Sorry, I didn't understand the app name.");
             }
+
+        } else if (textLower.contains("read notification") || textLower.contains("notification read")) { // ✅ ADDED
+            texttoSpeech.speak("Reading notifications...");
+            responseText.setText("Reading notifications...");
+            NotificationRead.readnoti();
+            return;
+
+        } else if (textLower.contains("exit the app") || textLower.contains("close the app")
+                || textLower.contains("exit") || textLower.contains("close")) { // ✅ ADDED
+            texttoSpeech.speak("Closing the app");
+            finishAffinity();
+            return;
+
+        } else if (textLower.contains("turn on flashlight") || textLower.contains("enable flashlight")
+                || textLower.contains("on flash") || textLower.contains("flashlight on")) { // ✅ ADDED
+            texttoSpeech.speak("Turning on flashlight");
+            responseText.setText("Turning on flashlight");
+            flashLight.turnonflash();
+            return;
+
+        } else if (textLower.contains("turn off flashlight") || textLower.contains("disable flashlight")
+                || textLower.contains("off flash") || textLower.contains("flashlight off")) { // ✅ ADDED
+            texttoSpeech.speak("Turning off flashlight");
+            responseText.setText("Turning off flashlight");
+            flashLight.turnoffflash();
+            return;
+
         } else {
-            respond("I didn't understand.");
+//            respond("I didn't understand.");
+            responseText.setText("Let me think...");
+            texttoSpeech.speak("I didn't understand. Let me find something helpful.");
+
+            GeminiHelper.fetchFallbackResponse(query, new GeminiHelper.GeminiCallback() {
+                @Override
+                public void onResponse(String geminiReply) {
+                    runOnUiThread(() -> {
+                        responseText.setText(geminiReply);
+                        texttoSpeech.speak(geminiReply);
+                    });
+                }
+            });
         }
     }
 
 
-//        String lowerText = text.toLowerCase();
-//        Log.d("VoiceCommand", "Recognized: " + text);
+    public void onSpeechRecognized1(String query) {
+        if (query == null || query.isEmpty()) return;
 
-//        if (lowerText.contains("call")) {
-//            String contactName = extractContactName(text);
-//            if (contactName != null) {
-//                callHelper.makePhoneCall(contactName);
-//                respond("Calling " + contactName);
-//            } else {
-//                respond("I couldn't identify the contact name.");
-//            }
-//        } else if (lowerText.contains("weather")) {
-//            String city = extractCityFromQuery(text);
-//            weatherHelper.fetchWeather(city);
-//        } else if (lowerText.contains("set alarm")) {
-//            String time = extractTimeFromQuery(text);
-//            if (time != null) {
-//                setAlarm(time);
-//            } else {
-//                respond("I couldn't understand the time.");
-//            }
-//        }
-//        } else {
-//            respond("Sorry, I didn't understand.");
-//        }
+        Log.d("SpeechRecognized", "Query: " + query);
+
+        // ✅ Reuse the already initialized matcher
+        String intent = nlpIntentMatcher.matchIntent(query);
+
+        switch (intent) {
+            case "call":
+                handleCallIntent(query);
+                break;
+            case "weather":
+                handleWeatherIntent(query);
+                break;
+            case "alarm":
+                handleAlarmIntent(query);
+                break;
+            case "flashlight":
+                handleFlashlightIntent(query);
+                break;
+            case "open_app":
+                handleOpenAppIntent(query);
+                break;
+            case "read_notifications":
+                handleReadNotificationsIntent();
+                break;
+            case "exit":
+                finish();
+                break;
+            default:
+                texttoSpeech.speak("Sorry, I didn't understand that.");
+                break;
+        }
+    }
+
+
+
+    private void handleCallIntent(String query) {
+        String contactName = extractContactName(query);
+        if (contactName != null) {
+            callHelper.makePhoneCall(contactName);
+        } else {
+            respond("I couldn't identify the contact name.");
+        }
+    }
+
+    private void handleWeatherIntent(String query) {
+        String city = extractCityFromQuery(query);
+        weatherHelper.fetchWeather(city);
+    }
+
+    private void handleAlarmIntent(String query) {
+        String time = extractTimeFromQuery(query);
+        if (time != null) {
+            setAlarm(time);
+        } else {
+            respond("I couldn't understand the time.");
+        }
+    }
+
+    private void handleFlashlightIntent(String query) {
+        if (query.toLowerCase().contains("off")) {
+            flashLight.turnoffflash();
+            respond("Turning off flashlight");
+        } else {
+            flashLight.turnonflash();
+            respond("Turning on flashlight");
+        }
+    }
+
+    private void handleOpenAppIntent(String query) {
+        String appName = extractAppName(query);
+        if (!appName.isEmpty()) {
+            appLaunch.openApp(appName);
+        } else {
+            respond("Sorry, I didn't understand the app name.");
+        }
+    }
+
+    private void handleReadNotificationsIntent() {
+        texttoSpeech.speak("Reading notifications...");
+        responseText.setText("Reading notifications...");
+        NotificationRead.readnoti();
+    }
+
 
 
     @Override
@@ -273,155 +407,3 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
         super.onDestroy();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//package com.example.voiceassistant_1;
-//
-//import android.Manifest;
-//import android.content.Intent;
-//import android.content.pm.PackageManager;
-//import android.net.Uri;
-//import android.os.Bundle;
-//import android.speech.RecognizerIntent;
-//import android.widget.ImageButton;
-//import android.widget.VideoView;
-//
-//import androidx.activity.EdgeToEdge;
-//import androidx.appcompat.app.AppCompatActivity;
-//import androidx.core.app.ActivityCompat;
-//import androidx.core.content.ContextCompat;
-//import androidx.core.graphics.Insets;
-//import androidx.core.view.ViewCompat;
-//import androidx.core.view.WindowInsetsCompat;
-//
-//import com.airbnb.lottie.LottieAnimationView;
-//
-//import java.util.Locale;
-//
-//public class MainActivity extends AppCompatActivity implements OnSpeechRecognizedListener{
-//    private SpeechListener speechListener;
-//    private TexttoSpeech texttoSpeech;
-//    private AppLaunch appLaunch;
-//    private static final int req_record_audio=1;
-//    private LottieAnimationView micbtn;
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
-//
-//        if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)!=
-//                PackageManager.PERMISSION_GRANTED){
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{Manifest.permission.RECORD_AUDIO},req_record_audio);
-//        }
-//
-//        VideoView videoView = findViewById(R.id.videoView);
-//        micbtn = findViewById(R.id.micButton);
-//
-//        Uri videouri=Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.sample);
-//        videoView.setVideoURI(videouri);
-//
-//        videoView.setOnPreparedListener(mp -> {
-//            mp.setLooping(true);
-//            videoView.start();
-//        });
-//
-//        texttoSpeech = new TexttoSpeech(this);
-//        appLaunch= new AppLaunch(this,texttoSpeech);
-//
-//        texttoSpeech.speak("Hello! What can i help you with?");
-//        speechListener = new SpeechListener(this,this);
-//
-//        micbtn.setOnClickListener(v -> {
-//
-//            if(!micbtn.isAnimating()){
-//                micbtn.playAnimation();
-//            }
-//
-//            speechListener.startListening();
-//
-//        });
-//
-//    }
-//
-//    @Override
-//    public void onSpeechRecognized(String text) {
-//        String textLower = text.toLowerCase();
-//        String appName = "";
-//
-//        if (textLower.contains("open ")) {
-//            appName = text.substring(textLower.indexOf("open ") + 5);
-//        } else if (textLower.contains("launch ")) {
-//            appName = text.substring(textLower.indexOf("launch ") + 7);
-//        } else if (textLower.contains("start ")) {
-//            appName = text.substring(textLower.indexOf("start ") + 6);
-//        }
-//
-//        if (!appName.isEmpty()) {
-//            appLaunch.openApp(appName);
-//        } else {
-//            texttoSpeech.speak("Sorry, I didn't understand.");
-//        }
-////        if(text.toLowerCase().startsWith("open ")){
-////            String appName = text.substring(5);
-////            appLaunch.openApp(appName);
-////        }
-//
-//    }
-//
-//    @Override
-//    public void onSpeechError(String error) {
-//        texttoSpeech.speak(error);
-//
-//    }
-//
-//    @Override
-//    public void onSpeechEnd() {
-//        runOnUiThread(()->{
-//            micbtn.pauseAnimation();
-//            micbtn.setFrame(0);
-//        });
-//    }
-//
-//    @Override
-//    protected void onDestroy() {
-//        if(texttoSpeech!=null){
-//            texttoSpeech.shutdown();
-//        }
-//        super.onDestroy();
-//    }
-//}
