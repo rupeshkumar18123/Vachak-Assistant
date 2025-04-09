@@ -175,15 +175,10 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             responseText.setText("Let me think...");
             texttoSpeech.speak("I didn't understand. Let me find something helpful.");
 
-            GeminiHelper.fetchFallbackResponse(query, new GeminiHelper.GeminiCallback() {
-                @Override
-                public void onResponse(String geminiReply) {
-                    runOnUiThread(() -> {
-                        responseText.setText(geminiReply);
-                        texttoSpeech.speak(geminiReply);
-                    });
-                }
-            });
+            GeminiHelper.fetchFallbackResponse(query, geminiReply -> runOnUiThread(() -> {
+                responseText.setText(geminiReply);
+                texttoSpeech.speak(geminiReply);
+            }));
         }
     }
 
