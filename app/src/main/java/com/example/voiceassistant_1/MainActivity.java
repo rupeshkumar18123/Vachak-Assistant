@@ -69,9 +69,9 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             videoView.start();
         });
 
-        if(!isNotiaccessenable()){
-            reqnotiaccess();
-        }
+//        if(!isNotiaccessenable()){
+//            reqnotiaccess();
+//        }
 
         // Request necessary permissions
         requestPermissions();
