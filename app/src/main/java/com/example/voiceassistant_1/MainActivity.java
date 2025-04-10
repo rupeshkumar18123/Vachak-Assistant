@@ -45,10 +45,12 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
     private CallHelper callHelper;
     private WeatherHelper weatherHelper;
     private NLPIntentMatcher nlpIntentMatcher;
+    private GeminiHelper geminiHelper;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         nlpIntentMatcher = new NLPIntentMatcher(IntentWordList.intentWords);
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
 //        NLPIntentMatcher nlpMatcher = new NLPIntentMatcher();
 //        nlpIntentMatcher = new NLPIntentMatcher();
 //        nlpIntentMatcher = new NLPIntentMatcher(IntentWordList.intentWords);
+
 
 
 
@@ -99,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             }
             speechListener.startListening();
         });
+        geminiHelper = new GeminiHelper(this);
     }
 
 
@@ -171,15 +175,30 @@ public class MainActivity extends AppCompatActivity implements OnSpeechRecognize
             return;
 
         } else {
-//            respond("I didn't understand.");
-            responseText.setText("Let me think...");
-            texttoSpeech.speak("I didn't understand. Let me find something helpful.");
-
-            GeminiHelper.fetchFallbackResponse(query, geminiReply -> runOnUiThread(() -> {
-                responseText.setText(geminiReply);
-                texttoSpeech.speak(geminiReply);
-            }));
+            handleWithAI(query);
         }
+    }
+
+
+    private void handleWithAI(String query) {
+        geminiHelper.getAIResponse(query, new GeminiHelper.AICallback() {
+            @Override
+            public void onSuccess(String response) {
+                runOnUiThread(() -> {
+                    responseText.setText(response);
+                    texttoSpeech.speak(response);
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    responseText.setText("Error: " + error);
+                    Log.d("d", "onError: "+error);
+                    texttoSpeech.speak("Sorry, I encountered an error");
+                });
+            }
+        });
     }
 
 
